@@ -6,6 +6,15 @@ export enum VehicleStatus {
   CHARGING = "charging",
 }
 
+// 轨迹点数据结构
+export interface TrajectoryPoint {
+  lng: number;
+  lat: number;
+  heading: number;
+  speed: number;
+  timestamp: number;
+}
+
 // 车辆数据结构
 export interface Vehicle {
   id: string;
@@ -20,6 +29,7 @@ export interface Vehicle {
   battery: number; // 电量百分比
   status: VehicleStatus; // 状态
   faultCode: string | null; // 故障码
+  trajectory: TrajectoryPoint[]; //历史轨迹（最多存储5分钟，每秒1个点 = 300个点）
 }
 
 // 路线配置
@@ -80,3 +90,39 @@ export const BASE_ROUTES: RouteConfig[] = [
 
 // 故障码列表
 export const FAULT_CODES = ["ERR_001", "ERR_002", "ERR_003"];
+
+// 最大轨迹点数（5分钟 = 300个点，每秒1个）
+export const MAX_TRAJECTORY_POINTS = 300;
+
+/********** 创建电子围栏类型定义 **********/
+
+// 围栏类型枚举
+export enum FenceType {
+  RECTANGLE = "rectangle",
+  CIRCLE = "circle",
+}
+
+// 电子围栏数据结构
+export interface GeoFence {
+  id: string;
+  name: string;
+  type: FenceType;
+  center: { lng: number; lat: number };
+  radius?: number; // 圆形半径（米）
+  bounds?: {
+    // 矩形范围
+    southWest: { lng: number; lat: number };
+    northEast: { lng: number; lat: number };
+  };
+  createdAt: number;
+}
+
+// 越界告警事件
+export interface BoundaryAlert {
+  id: string;
+  vehicleId: string;
+  fenceId: string;
+  fenceName: string;
+  timestamp: number;
+  position: { lng: number; lat: number };
+}

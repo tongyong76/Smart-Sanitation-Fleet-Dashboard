@@ -3,8 +3,9 @@ import {
   WebSocketMessage,
   VehicleStatus,
   FAULT_CODES,
+  MAX_TRAJECTORY_POINTS,
 } from "../types/vehicle";
-import { generateVehicles } from "../models/vehicle";
+import { generateVehicles, updateVehicleTrajectory } from "../models/vehicle";
 import { updateVehiclePosition } from "../utils/vehicleMovement";
 
 type MessageCallback = (message: WebSocketMessage) => void;
@@ -49,6 +50,9 @@ class MockWebSocket {
     this.vehicles.forEach((vehicle) => {
       // 更新位置
       updateVehiclePosition(vehicle);
+
+      // 记录轨迹（新增）
+      updateVehicleTrajectory(vehicle);
 
       // 模拟随机故障产生（千分之一概率）
       if (Math.random() < 0.001 && vehicle.status !== VehicleStatus.FAULT) {
@@ -123,6 +127,14 @@ class MockWebSocket {
    */
   public getVehicles(): Vehicle[] {
     return [...this.vehicles];
+  }
+
+  /**
+   * 获取指定车辆的轨迹
+   */
+  public getVehicleTrajectory(vehicleId: string): Vehicle["trajectory"] | null {
+    const vehicle = this.vehicles.find((v) => v.id === vehicleId);
+    return vehicle ? [...vehicle.trajectory] : null;
   }
 }
 

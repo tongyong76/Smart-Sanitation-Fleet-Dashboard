@@ -3,6 +3,8 @@ import {
   VehicleStatus,
   BASE_ROUTES,
   FAULT_CODES,
+  MAX_TRAJECTORY_POINTS,
+  TrajectoryPoint,
 } from "../types/vehicle";
 
 /**
@@ -34,6 +36,29 @@ const getRandomBattery = (): number => {
 };
 
 /**
+ * 初始化轨迹数组（用起始点填充）
+ */
+const initTrajectory = (
+  lng: number,
+  lat: number,
+  heading: number,
+  speed: number,
+): TrajectoryPoint[] => {
+  const now = Date.now();
+  const trajectory: TrajectoryPoint[] = [];
+  for (let i = 0; i < MAX_TRAJECTORY_POINTS; i++) {
+    trajectory.push({
+      lng,
+      lat,
+      heading,
+      speed,
+      timestamp: now - (MAX_TRAJECTORY_POINTS - i) * 1000,
+    });
+  }
+  return trajectory;
+};
+
+/**
  * 生成10辆模拟车辆
  */
 export const generateVehicles = (): Vehicle[] => {
@@ -43,6 +68,9 @@ export const generateVehicles = (): Vehicle[] => {
     const routeIndex = i % BASE_ROUTES.length;
     const route = BASE_ROUTES[routeIndex];
     const status = getRandomStatus();
+    const startLng = route.points[0][0];
+    const startLat = route.points[0][1];
+    const startSpeed = getRandomSpeed();
 
     vehicles.push({
       id: `S${String(i + 1).padStart(3, "0")}`,
@@ -50,18 +78,39 @@ export const generateVehicles = (): Vehicle[] => {
       currentPointIndex: 0,
       progress: 0,
       speed: route.speed,
-      lng: route.points[0][0],
-      lat: route.points[0][1],
+      lng: startLng,
+      lat: startLat,
       heading: 0,
-      speedKmh: getRandomSpeed(),
+      speedKmh: startSpeed,
       battery: getRandomBattery(),
       status: status,
       faultCode:
         status === VehicleStatus.FAULT
           ? FAULT_CODES[Math.floor(Math.random() * FAULT_CODES.length)]
           : null,
+      trajectory: initTrajectory(startLng, startLat, 0, startSpeed),
     });
   }
 
   return vehicles;
+};
+
+/**
+ * 更新车辆轨迹
+ */
+export const updateVehicleTrajectory = (vehicle: Vehicle): void => {
+  const newPoint: TrajectoryPoint = {
+    lng: vehicle.lng,
+    lat: vehicle.lat,
+    heading: vehicle.heading,
+    speed: vehicle.speedKmh,
+    timestamp: Date.now(),
+  };
+
+  vehicle.trajectory.push(newPoint);
+
+  // 保持最多 MAX_TRAJECTORY_POINTS 个点
+  while (vehicle.trajectory.length > MAX_TRAJECTORY_POINTS) {
+    vehicle.trajectory.shift();
+  }
 };

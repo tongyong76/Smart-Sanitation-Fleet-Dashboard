@@ -15,19 +15,25 @@
         anchor="BMAP_ANCHOR_TOP_LEFT"
       ></bm-map-type>
     </baidu-map>
+
+    <!-- 热力图控制按钮 -->
+    <button class="heatmap-toggle" @click="toggleHeatmap">
+      {{ isHeatmapVisible ? "隐藏热力图" : "显示热力图" }}
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { mockWS } from "../services/mockWebSocket";
+import { useHeatmap } from "../composables/useHeatmap";
 import type { Vehicle, VehicleStatus } from "../types/vehicle";
 
 // 定义地图实例类型
-// interface BaiduMapInstance {
-//   map: any;
-//   BMap: any;
-// }
+interface BaiduMapInstance {
+  map: any;
+  BMap: any;
+}
 
 // 坐标点类型
 interface Point {
@@ -39,12 +45,19 @@ interface Point {
 // 注意：百度地图使用 BD09 坐标系
 const center: Point = { lng: 121.4737, lat: 31.2304 };
 const zoom = ref<number>(14);
-// const mapRef = ref<BaiduMapInstance | null>(null);
+const mapRef = ref<BaiduMapInstance | null>(null);
 
 let map: any = null;
 let BMap: any = null;
 const markers = new Map<string, any>(); // 存储车辆Marker
 const markerCache = new Map<string, string>(); // 缓存车辆图标标识
+
+// 热力图
+const { isHeatmapVisible, initHeatmap, updateHeatmapData, toggleHeatmap } =
+  useHeatmap();
+
+// 当前车辆数据（用于热力图更新）
+let currentVehicles: Vehicle[] = [];
 
 /**
  * 根据状态获取图标颜色
@@ -213,13 +226,21 @@ const handleMapReady = ({
 
   console.log("地图加载完成，开始模拟数据");
 
+  // 初始化热力图
+  setTimeout(() => {
+    initHeatmap(map, BMap);
+  }, 500);
+
   // 启动 WebSocket 模拟
   mockWS.start();
 
   // 监听车辆数据更新
   mockWS.on("message", (msg) => {
     if (msg.type === "vehicles_update") {
-      updateVehicleMarkers(msg.data);
+      currentVehicles = msg.data;
+      updateVehicleMarkers(currentVehicles);
+      // 更新热力图
+      updateHeatmapData(currentVehicles);
     }
   });
 };
@@ -235,10 +256,63 @@ const flyToVehicle = (vehicle: Vehicle): void => {
   }
 };
 
+/**
+ * 绘制矩形围栏
+ */
+const drawRectangle = (bounds: {
+  southWest: { lng: number; lat: number };
+  northEast: { lng: number; lat: number };
+}): void => {
+  if (!map) return;
+
+  const points = [
+    new BMap.Point(bounds.southWest.lng, bounds.southWest.lat),
+    new BMap.Point(bounds.northEast.lng, bounds.southWest.lat),
+    new BMap.Point(bounds.northEast.lng, bounds.northEast.lat),
+    new BMap.Point(bounds.southWest.lng, bounds.northEast.lat),
+  ];
+
+  const polygon = new BMap.Polygon(points, {
+    strokeColor: "#10B981",
+    fillColor: "#10B981",
+    strokeWeight: 2,
+    fillOpacity: 0.2,
+  });
+
+  map.addOverlay(polygon);
+  return polygon;
+};
+
+/**
+ * 绘制圆形围栏
+ */
+const drawCircle = (
+  center: { lng: number; lat: number },
+  radius: number,
+): void => {
+  if (!map) return;
+
+  const circle = new BMap.Circle(
+    new BMap.Point(center.lng, center.lat),
+    radius,
+    {
+      strokeColor: "#10B981",
+      fillColor: "#10B981",
+      strokeWeight: 2,
+      fillOpacity: 0.2,
+    },
+  );
+
+  map.addOverlay(circle);
+  return circle;
+};
+
 // 暴露方法给父组件
 defineExpose({
   map,
   flyToVehicle,
+  drawRectangle,
+  drawCircle,
 });
 
 // 组件卸载时清理
@@ -260,5 +334,26 @@ onUnmounted(() => {
 .map {
   width: 100%;
   height: 100%;
+}
+
+.heatmap-toggle {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.heatmap-toggle:hover {
+  background: #10b981;
+  border-color: #10b981;
 }
 </style>

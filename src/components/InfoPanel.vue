@@ -53,6 +53,12 @@
           <span class="vehicle-speed"
             >{{ vehicle.speedKmh.toFixed(0) }} km/h</span
           >
+          <button
+            class="replay-btn"
+            @click.stop="emit('replay-vehicle', vehicle)"
+          >
+            🎬
+          </button>
         </div>
       </div>
     </div>
@@ -69,6 +75,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "select-vehicle", vehicle: Vehicle): void;
+  (e: "replay-vehicle", vehicle: Vehicle): void;
 }>();
 
 // 统计数据
@@ -263,5 +270,20 @@ const handleSelectVehicle = (vehicle: Vehicle): void => {
 .vehicle-list::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 2px;
+}
+
+.replay-btn {
+  background: rgba(16, 185, 129, 0.3);
+  border: none;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+
+.replay-btn:hover {
+  background: rgba(16, 185, 129, 0.6);
 }
 </style>
