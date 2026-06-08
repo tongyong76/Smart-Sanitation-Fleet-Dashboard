@@ -6,6 +6,7 @@ declare global {
     BMAP_ANCHOR_BOTTOM_RIGHT: any;
     BMAP_NORMAL_MAP: any;
     BMAP_SATELLITE_MAP: any;
+    BMapLib: any;
   }
 }
 

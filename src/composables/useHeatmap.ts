@@ -1,5 +1,12 @@
-import { ref, type Ref } from "vue";
+import { ref } from "vue";
 import type { Vehicle } from "../types/vehicle";
+
+// 声明全局的 BMapLib 类型
+declare global {
+  interface Window {
+    BMapLib: any;
+  }
+}
 
 // 热力图数据点
 export interface HeatmapPoint {
@@ -38,6 +45,7 @@ export function useHeatmap() {
     });
 
     map.addOverlay(heatmapOverlay.value);
+    console.log("热力图初始化完成");
   };
 
   /**
@@ -65,14 +73,20 @@ export function useHeatmap() {
    * 切换热力图显示/隐藏
    */
   const toggleHeatmap = (): void => {
+    console.log(
+      "切换热力图显示状态",
+      heatmapOverlay.value,
+      isHeatmapVisible.value ? "隐藏" : "显示",
+    );
     if (!heatmapOverlay.value) return;
 
-    isHeatmapVisible.value = !isHeatmapVisible.value;
     if (isHeatmapVisible.value) {
-      heatmapOverlay.value.show();
-    } else {
       heatmapOverlay.value.hide();
+    } else {
+      heatmapOverlay.value.show();
     }
+
+    isHeatmapVisible.value = !isHeatmapVisible.value;
   };
 
   /**

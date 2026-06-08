@@ -9,11 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "bmaplib.heatmap": "^1.0.4",
     "echarts": "^6.1.0",
     "vue": "^3.5.34",
     "vue-baidu-map-next": "^1.0.3"
   },
   "devDependencies": {
+    "@types/bmapgl": "^0.0.7",
     "@types/node": "^24.12.3",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-vue": "^6.0.6",

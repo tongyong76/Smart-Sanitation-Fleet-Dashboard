@@ -5,13 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>无人车云端监控演示平台</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <!-- 1. 首先引入百度地图核心库 -->
+    <script
+      type="text/javascript"
+      src="https://api.map.baidu.com/api?v=3.0&ak=1Rixu0OocavcAZgBhxFSnkfbrNaBeNEb"
+    ></script>
+    <!-- 2. 再引入热力图扩展库 -->
     <script
       type="text/javascript"
       src="https://api.map.baidu.com/library/Heatmap/2.0/src/Heatmap_min.js"
     ></script>
-  </head>
-  <body>
-    <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
