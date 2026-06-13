@@ -21,6 +21,7 @@ export const calculateHeading = (
  * @param vehicle 车辆对象（会被直接修改）
  */
 export const updateVehiclePosition = (vehicle: Vehicle): void => {
+  console.log("Updating vehicle position:", vehicle);
   const { route, currentPointIndex, progress, speed } = vehicle;
   const from = route[currentPointIndex];
   const to = route[currentPointIndex + 1];

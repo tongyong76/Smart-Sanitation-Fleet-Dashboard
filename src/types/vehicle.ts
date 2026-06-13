@@ -29,7 +29,7 @@ export interface Vehicle {
   battery: number; // 电量百分比
   status: VehicleStatus; // 状态
   faultCode: string | null; // 故障码
-  trajectory: TrajectoryPoint[]; //历史轨迹（最多存储5分钟，每秒1个点 = 300个点）
+  trajectory: TrajectoryPoint[]; //历史轨迹（最多存储5分钟，每秒1个点 = 300个点)
 }
 
 // 路线配置

@@ -53,12 +53,36 @@
           <span class="vehicle-speed"
             >{{ vehicle.speedKmh.toFixed(0) }} km/h</span
           >
-          <button
-            class="replay-btn"
-            @click.stop="emit('replay-vehicle', vehicle)"
-          >
-            🎬
-          </button>
+          <div class="command-buttons">
+            <button
+              class="cmd-btn"
+              @click.stop="sendCommand(vehicle, 'slow_down')"
+              title="降速"
+            >
+              🐢
+            </button>
+            <button
+              class="cmd-btn"
+              @click.stop="sendCommand(vehicle, 'resume_speed')"
+              title="恢复"
+            >
+              ▶
+            </button>
+            <button
+              class="cmd-btn"
+              @click.stop="sendCommand(vehicle, 'stop')"
+              title="紧急停车"
+            >
+              ⏹️
+            </button>
+            <button
+              class="cmd-btn replay"
+              @click.stop="emit('replay-vehicle', vehicle)"
+              title="轨迹回放"
+            >
+              🎬
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -68,6 +92,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Vehicle, VehicleStatus } from "../types/vehicle";
+import { mockWS } from "../services/mockWebSocket";
 
 const props = defineProps<{
   vehicles: Vehicle[];
@@ -122,6 +147,29 @@ const getStatusText = (status: VehicleStatus): string => {
  */
 const handleSelectVehicle = (vehicle: Vehicle): void => {
   emit("select-vehicle", vehicle);
+};
+
+// 发送远程指令
+const sendCommand = async (vehicle: Vehicle, command: string) => {
+  const commandNames: Record<string, string> = {
+    slow_down: "降速",
+    resume_speed: "恢复速度",
+    stop: "紧急停车",
+  };
+
+  // 二次确认
+  if (command === "stop") {
+    if (!confirm(`确认要对 ${vehicle.id} 下发紧急停车指令吗？`)) return;
+  }
+
+  const success = await mockWS.sendCommand(vehicle.id, command);
+  if (success) {
+    // 可选：显示轻提示
+    console.log(`指令 ${commandNames[command]} 已下发至 ${vehicle.id}`);
+    // 可以添加一个简单的 toast 通知
+  } else {
+    console.error(`指令下发失败`);
+  }
 };
 </script>
 
@@ -285,5 +333,29 @@ const handleSelectVehicle = (vehicle: Vehicle): void => {
 
 .replay-btn:hover {
   background: rgba(16, 185, 129, 0.6);
+}
+
+/* 新增指令按钮样式 */
+.command-buttons {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.cmd-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.cmd-btn:hover {
+  background: #10b981;
+}
+.cmd-btn.replay:hover {
+  background: #3b82f6;
 }
 </style>

@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onUnmounted } from "vue";
 import { mockWS } from "../services/mockWebSocket";
 import { useHeatmap } from "../composables/useHeatmap";
 import type { Vehicle, VehicleStatus } from "../types/vehicle";
@@ -58,6 +58,9 @@ const { isHeatmapVisible, initHeatmap, updateHeatmapData, toggleHeatmap } =
 
 // 当前车辆数据（用于热力图更新）
 let currentVehicles: Vehicle[] = [];
+
+let pendingVehicles: Vehicle[] | null = null;
+let animationFrameId: number | null = null;
 
 /**
  * 根据状态获取图标颜色
@@ -212,6 +215,24 @@ const updateVehicleMarkers = (vehicles: Vehicle[]): void => {
 };
 
 /**
+ * 使用 requestAnimationFrame 节流更新 Marker
+ */
+const throttledUpdateMarkers = (vehicles: Vehicle[]): void => {
+  pendingVehicles = vehicles;
+
+  if (animationFrameId !== null) return;
+
+  animationFrameId = requestAnimationFrame(() => {
+    if (pendingVehicles) {
+      updateVehicleMarkers(pendingVehicles);
+      updateHeatmapData(pendingVehicles);
+      pendingVehicles = null;
+    }
+    animationFrameId = null;
+  });
+};
+
+/**
  * 地图加载完成处理
  */
 const handleMapReady = ({
@@ -223,6 +244,7 @@ const handleMapReady = ({
 }): void => {
   map = mapInstance;
   BMap = BMapInstance;
+  mapRef.value = { map: mapInstance, BMap: BMapInstance };
 
   console.log("地图加载完成，开始模拟数据");
 
@@ -237,10 +259,13 @@ const handleMapReady = ({
   // 监听车辆数据更新
   mockWS.on("message", (msg) => {
     if (msg.type === "vehicles_update") {
+      console.log("收到车辆数据更新:", msg.data);
       currentVehicles = msg.data;
-      updateVehicleMarkers(currentVehicles);
-      // 更新热力图
-      updateHeatmapData(currentVehicles);
+      // updateVehicleMarkers(currentVehicles);
+      // // 更新热力图
+      // updateHeatmapData(currentVehicles);
+      // 使用节流更新，而不是直接更新
+      throttledUpdateMarkers(currentVehicles);
     }
   });
 };
@@ -315,8 +340,11 @@ defineExpose({
   drawCircle,
 });
 
-// 组件卸载时清理
+// 组件卸载时取消动画帧
 onUnmounted(() => {
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+  }
   mockWS.stop();
   markers.forEach((marker) => {
     if (map) map.removeOverlay(marker);
